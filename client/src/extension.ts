@@ -1,4 +1,4 @@
-import { workspace, ExtensionContext } from 'vscode';
+import { workspace, ExtensionContext, window } from 'vscode';
 
 import {
 	LanguageClient,
@@ -8,20 +8,20 @@ import {
 
 let client: LanguageClient;
 
-export function activate(context: ExtensionContext) {
+export async function activate(context: ExtensionContext) {
 	// Startup options for the language server
 	const serverOptions: ServerOptions = {
 		command: "java",
 		args: [
-			"-Duser.project=E:\\Projects\\Masterarbeit\\CryptoLSPDemo",
+			`-Duser.project=${context.extensionPath}/resources`,
 			"-jar",
-			"E:\\Projects\\Masterarbeit\\CryptoLSPDemo\\target\\crypto-lsp-demo-0.0.1-SNAPSHOT.jar"
+			`${context.extensionPath}/resources/crypto-lsp-demo-0.0.1-SNAPSHOT.jar`
 		]
 	};
-
+	
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
-		// Register the server for plain text documents
+		// Register the server for Java documents
 		documentSelector: [
 			{ scheme: 'file', language: 'java' },
 			{ scheme: 'jdt', language: 'java' },
@@ -36,6 +36,11 @@ export function activate(context: ExtensionContext) {
 	// Create the language client and start the client. This will also launch the server
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions);
 	client.start();
+	await client.onReady();
+	client.onNotification("cognicrypt/showCFG", async args => {
+		const doc = await workspace.openTextDocument({ language: 'dot', content: args.dotString });
+		window.showTextDocument(doc);
+	});
 }
 
 export function deactivate(): Thenable<void> | undefined {
