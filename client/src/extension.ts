@@ -31,6 +31,8 @@ export async function activate(context: ExtensionContext) {
 		};
 		return new Promise<StreamInfo>((resolve, reject) => {
 			socket.on("connect", () => resolve(result));
+			socket.on("close", _ =>
+				window.showWarningMessage("Connection to CogniCrypt language server closed."));
 			socket.on("error", _ =>
 				window.showErrorMessage(
 					"Failed to connect to CogniCrypt language server. Make sure that the language server is running " +
@@ -53,8 +55,7 @@ export async function activate(context: ExtensionContext) {
 			{ scheme: 'jdt', language: 'java' },
 		],
 		synchronize: {
-			configurationSection: 'java',
-			// Notify the server about file changes to '.clientrc files contained in the workspace
+			configurationSection: 'cognicrypt',
 			fileEvents: [workspace.createFileSystemWatcher('**/*.java')]
 		}
 	};
