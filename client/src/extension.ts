@@ -60,7 +60,7 @@ export async function activate(context: ExtensionContext) {
 		}
 	};
 
-	// Create the language client and start the client. This will also launch the server
+	// Create the language client and start it. This will also launch or connect to the server.
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions);
 	client.start();
 	await client.onReady();
