@@ -35,7 +35,31 @@
 					"name": "Diagnostics"
 				}
 			]
-		}
+		},
+		"configuration": [
+			{
+				"title": "CogniCrypt",
+				"properties": {
+					"cognicrypt.autoReanalyze": {
+						"title": "Re-analyze when files change",
+						"default": "ask",
+						"enum": [ "always", "never", "ask" ],
+						"enumDescriptions": [ "Always", "Never", "Ask every time" ],
+						"description": "CogniCrypt can automatically restart the code analysis when file changes are saved or files are externally modified."
+					},
+					"cognicrypt.lspTransport": {
+						"title": "Transport mode for the connection to the language server",
+						"description": "Transport mode for the connection to the language server. Changing this requires a reload of the extension or VS Code.",
+						"default": "stdio",
+						"enum": [ "stdio", "socket" ],
+						"enumDescriptions": [
+							"VS Code starts a new instance of the language server and communicates over standard IO",
+							"VS Code connects to an already running language server via a socket on port 5007"
+						]
+					}
+				}
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
