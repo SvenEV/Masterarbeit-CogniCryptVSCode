@@ -1,4 +1,4 @@
-import { workspace, ExtensionContext, window } from 'vscode';
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem } from 'vscode';
 
 import * as net from 'net';
 import {
@@ -9,6 +9,7 @@ import {
 } from 'vscode-languageclient';
 
 let client: LanguageClient;
+let statusBarItem: StatusBarItem;
 
 export async function activate(context: ExtensionContext) {
 	// Startup options for the language server
@@ -29,10 +30,10 @@ export async function activate(context: ExtensionContext) {
 			writer: socket,
 			reader: socket
 		};
-		return new Promise<StreamInfo>((resolve, reject) => {
+		return new Promise<StreamInfo>((resolve) => {
 			socket.on("connect", () => resolve(result));
 			socket.on("close", _ =>
-				window.showWarningMessage("Connection to CogniCrypt language server closed."));
+				setStatusBarMessage("Connection to CogniCrypt language server closed."));
 			socket.on("error", _ =>
 				window.showErrorMessage(
 					"Failed to connect to CogniCrypt language server. Make sure that the language server is running " +
@@ -60,14 +61,34 @@ export async function activate(context: ExtensionContext) {
 		}
 	};
 
+	// Create status bar item
+	statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 0);
+	statusBarItem.color = "yellow";
+	statusBarItem.tooltip = "CogniCrypt";
+	context.subscriptions.push(statusBarItem);
+
 	// Create the language client and start it. This will also launch or connect to the server.
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions);
 	client.start();
 	await client.onReady();
+	
+	// Subscribe to custom notifications
 	client.onNotification("cognicrypt/showCFG", async args => {
 		const doc = await workspace.openTextDocument({ language: 'dot', content: args.dotString });
 		window.showTextDocument(doc);
 	});
+
+	client.onNotification("cognicrypt/status", async args => {
+		setStatusBarMessage(args);
+	});
+}
+
+function setStatusBarMessage(message: string) {
+	statusBarItem.text = "$(lock) " + message;
+	if (message && message !== "")
+		statusBarItem.show();
+	else
+		statusBarItem.hide();
 }
 
 export function deactivate(): Thenable<void> | undefined {
