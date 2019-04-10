@@ -25,6 +25,7 @@ import {
 
 let client: LanguageClient
 let statusBarItem: StatusBarItem
+let statusMessage: StatusMessage
 
 export async function activate(context: ExtensionContext) {
 	// Startup options for the language server
@@ -48,7 +49,7 @@ export async function activate(context: ExtensionContext) {
 		return new Promise<StreamInfo>((resolve) => {
 			socket.on("connect", () => resolve(result))
 			socket.on("close", _ =>
-				setStatusBarMessage("Connection to CogniCrypt language server closed."))
+				setStatusBarMessage({ text: "Connection to CogniCrypt language server closed." }))
 			socket.on("error", _ =>
 				window.showErrorMessage(
 					"Failed to connect to CogniCrypt language server. Make sure that the language server is running " +
@@ -78,10 +79,11 @@ export async function activate(context: ExtensionContext) {
 
 	// Create status bar item
 	statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 0)
+	statusBarItem.command = "cognicrypt/statusDetails"
 	statusBarItem.color = "yellow"
 	statusBarItem.tooltip = "CogniCrypt"
 	context.subscriptions.push(statusBarItem)
-	setStatusBarMessage("Activating CogniCrypt...")
+	setStatusBarMessage({ text: "Activating CogniCrypt..." })
 
 	// Create the language client and start it. This will also launch or connect to the server.
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions)
@@ -89,13 +91,15 @@ export async function activate(context: ExtensionContext) {
 	await client.onReady()
 
 	// Setup CogniCrypt viewlet
-	const treeViewProvider = new SimpleTreeDataProvider()
-	window.registerTreeDataProvider('cognicrypt.diagnostics', treeViewProvider)
+	const treeDiagnostics = new SimpleTreeDataProvider()
+	const treeInfo = new SimpleTreeDataProvider()
+	window.registerTreeDataProvider('cognicrypt.diagnostics', treeDiagnostics)
+	window.registerTreeDataProvider('cognicrypt.info', treeInfo)
 
 	// Subscribe to custom notifications
 	client.onNotification("cognicrypt/showCFG", async args => {
 		const doc = await workspace.openTextDocument({ language: 'dot', content: args.dotString })
-		window.showTextDocument(doc)
+		await window.showTextDocument(doc)
 	})
 
 	client.onNotification("cognicrypt/status", async args => {
@@ -103,26 +107,49 @@ export async function activate(context: ExtensionContext) {
 	})
 
 	client.onNotification("cognicrypt/treeData", async (args: PublishTreeDataParams) => {
-		treeViewProvider.update(args.rootItems)
+		switch (args.viewId) {
+			case "cognicrypt.diagnostics": treeDiagnostics.update(args.rootItems)
+			case "cognicrypt.info": treeInfo.update(args.rootItems)
+		}
 	})
 
 	// Register commands
 	commands.registerCommand("cognicrypt/goto", async (args: Location) => {
 		try {
 			args.uri = Uri.parse(args.uri.toString())
-			await workspace.openTextDocument(args.uri)
+			const doc = await workspace.openTextDocument(args.uri)
+			await window.showTextDocument(doc)
 		} catch (e) {
 			window.showErrorMessage(e)
 		}
 	})
+
+	commands.registerCommand("cognicrypt/statusDetails", async _ => {
+		const doc = await workspace.openTextDocument({
+			content: statusMessage.details,
+			language: "markdown"
+		})
+		await window.showTextDocument(doc)
+	})
 }
 
-function setStatusBarMessage(message: string) {
-	statusBarItem.text = "$(lock) " + message
-	if (message && message !== "")
-		statusBarItem.show()
-	else
+interface StatusMessage {
+	text: string
+	details?: string
+}
+
+function setStatusBarMessage(message: StatusMessage) {
+	statusMessage = message
+	if (message) {
+		statusBarItem.text = "$(lock) " + message.text
+		statusBarItem.command = (message.details && message.details !== "") ? "cognicrypt/statusDetails" : null
+		if (message.text && message.text !== "")
+			statusBarItem.show()
+		else
+			statusBarItem.hide()
+	} else {
 		statusBarItem.hide()
+	}
 }
 
 export function deactivate(): Thenable<void> | undefined {

@@ -33,6 +33,10 @@
 				{
 					"id": "cognicrypt.diagnostics",
 					"name": "Diagnostics"
+				},
+				{
+					"id": "cognicrypt.info",
+					"name": "Workspace Info"
 				}
 			]
 		},
