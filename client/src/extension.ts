@@ -108,8 +108,8 @@ export async function activate(context: ExtensionContext) {
 
 	client.onNotification("cognicrypt/treeData", async (args: PublishTreeDataParams) => {
 		switch (args.viewId) {
-			case "cognicrypt.diagnostics": treeDiagnostics.update(args.rootItems)
-			case "cognicrypt.info": treeInfo.update(args.rootItems)
+			case "cognicrypt.diagnostics": treeDiagnostics.update(args.rootItems); break
+			case "cognicrypt.info": treeInfo.update(args.rootItems); break
 		}
 	})
 
@@ -118,7 +118,10 @@ export async function activate(context: ExtensionContext) {
 		try {
 			args.uri = Uri.parse(args.uri.toString())
 			const doc = await workspace.openTextDocument(args.uri)
-			await window.showTextDocument(doc)
+			await window.showTextDocument(doc, {
+				preserveFocus: true,
+				selection: args.range
+			})
 		} catch (e) {
 			window.showErrorMessage(e)
 		}
