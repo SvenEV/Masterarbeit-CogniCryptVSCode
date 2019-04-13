@@ -79,7 +79,7 @@ export async function activate(context: ExtensionContext) {
 
 	// Create status bar item
 	statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 0)
-	statusBarItem.command = "cognicrypt/statusDetails"
+	statusBarItem.command = "cognicrypt.statusDetails"
 	statusBarItem.color = "yellow"
 	statusBarItem.tooltip = "CogniCrypt"
 	context.subscriptions.push(statusBarItem)
@@ -93,8 +93,10 @@ export async function activate(context: ExtensionContext) {
 	// Setup CogniCrypt viewlet
 	const treeDiagnostics = new SimpleTreeDataProvider()
 	const treeInfo = new SimpleTreeDataProvider()
-	window.registerTreeDataProvider('cognicrypt.diagnostics', treeDiagnostics)
+	// window.registerTreeDataProvider('cognicrypt.diagnostics', treeDiagnostics)
 	window.registerTreeDataProvider('cognicrypt.info', treeInfo)
+
+	const treeViewDiagnostics = window.createTreeView('cognicrypt.diagnostics', { treeDataProvider: treeDiagnostics })
 
 	// Subscribe to custom notifications
 	client.onNotification("cognicrypt/showCFG", async args => {
@@ -111,10 +113,13 @@ export async function activate(context: ExtensionContext) {
 			case "cognicrypt.diagnostics": treeDiagnostics.update(args.rootItems); break
 			case "cognicrypt.info": treeInfo.update(args.rootItems); break
 		}
+
+		if (args.focus)
+			treeViewDiagnostics.reveal(treeDiagnostics.rootItems[0])
 	})
 
 	// Register commands
-	commands.registerCommand("cognicrypt/goto", async (args: Location) => {
+	commands.registerCommand("cognicrypt.goto", async (args: Location) => {
 		try {
 			args.uri = Uri.parse(args.uri.toString())
 			const doc = await workspace.openTextDocument(args.uri)
@@ -127,7 +132,7 @@ export async function activate(context: ExtensionContext) {
 		}
 	})
 
-	commands.registerCommand("cognicrypt/statusDetails", async _ => {
+	commands.registerCommand("cognicrypt.statusDetails", async _ => {
 		const doc = await workspace.openTextDocument({
 			content: statusMessage.details,
 			language: "markdown"
@@ -145,7 +150,7 @@ function setStatusBarMessage(message: StatusMessage) {
 	statusMessage = message
 	if (message) {
 		statusBarItem.text = "$(lock) " + message.text
-		statusBarItem.command = (message.details && message.details !== "") ? "cognicrypt/statusDetails" : null
+		statusBarItem.command = (message.details && message.details !== "") ? "cognicrypt.statusDetails" : null
 		if (message.text && message.text !== "")
 			statusBarItem.show()
 		else
