@@ -41,6 +41,18 @@
 				}
 			]
 		},
+		"commands": [
+			{
+				"command": "cognicrypt.inspectJimple",
+				"category": "CogniCrypt",
+				"title": "Inspect Jimple of class..."
+			},
+			{
+				"command": "cognicrypt.reanalyze",
+				"category": "CogniCrypt",
+				"title": "Re-Analyze"
+			}
+		],
 		"configuration": [
 			{
 				"title": "CogniCrypt",

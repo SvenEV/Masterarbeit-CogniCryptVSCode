@@ -1,27 +1,7 @@
-import {
-	workspace,
-	ExtensionContext,
-	window,
-	StatusBarAlignment,
-	StatusBarItem,
-	Location,
-	commands,
-	Uri
-} from 'vscode'
-
 import * as net from 'net'
-
-import {
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-	StreamInfo
-} from 'vscode-languageclient'
-
-import {
-	SimpleTreeDataProvider,
-	PublishTreeDataParams
-} from './treeview';
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri } from 'vscode'
+import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
+import { handleQuickPickRequest, handleShowTextDocumentNotification, handleShowCfgNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification } from './protocol';
 
 let client: LanguageClient
 let statusBarItem: StatusBarItem
@@ -78,7 +58,7 @@ export async function activate(context: ExtensionContext) {
 	}
 
 	// Create status bar item
-	statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 0)
+	statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left, 10)
 	statusBarItem.command = "cognicrypt.statusDetails"
 	statusBarItem.color = "yellow"
 	statusBarItem.tooltip = "CogniCrypt"
@@ -91,32 +71,18 @@ export async function activate(context: ExtensionContext) {
 	await client.onReady()
 
 	// Setup CogniCrypt viewlet
-	const treeDiagnostics = new SimpleTreeDataProvider()
-	const treeInfo = new SimpleTreeDataProvider()
-	// window.registerTreeDataProvider('cognicrypt.diagnostics', treeDiagnostics)
-	window.registerTreeDataProvider('cognicrypt.info', treeInfo)
-
-	const treeViewDiagnostics = window.createTreeView('cognicrypt.diagnostics', { treeDataProvider: treeDiagnostics })
-
+	const trees = new Map<string, SimpleTreeDataProvider>([
+		[ 'cognicrypt.info', new SimpleTreeDataProvider() ],
+		[ 'cognicrypt.diagnostics', new SimpleTreeDataProvider() ]
+	])
+	trees.forEach((provider, viewId) => window.registerTreeDataProvider(viewId, provider))
+	
 	// Subscribe to custom notifications
-	client.onNotification("cognicrypt/showCFG", async args => {
-		const doc = await workspace.openTextDocument({ language: 'dot', content: args.dotString })
-		await window.showTextDocument(doc)
-	})
-
-	client.onNotification("cognicrypt/status", async args => {
-		setStatusBarMessage(args)
-	})
-
-	client.onNotification("cognicrypt/treeData", async (args: PublishTreeDataParams) => {
-		switch (args.viewId) {
-			case "cognicrypt.diagnostics": treeDiagnostics.update(args.rootItems); break
-			case "cognicrypt.info": treeInfo.update(args.rootItems); break
-		}
-
-		if (args.focus)
-			treeViewDiagnostics.reveal(treeDiagnostics.rootItems[0])
-	})
+	client.onNotification("cognicrypt/showCFG", handleShowCfgNotification)
+	client.onNotification("cognicrypt/status", async args => setStatusBarMessage(args))
+	client.onNotification("cognicrypt/treeData", handleTreeDataNotification(trees))
+	client.onRequest("cognicrypt/quickPick", handleQuickPickRequest)
+	client.onNotification("cognicrypt/showTextDocument", handleShowTextDocumentNotification)
 
 	// Register commands
 	commands.registerCommand("cognicrypt.goto", async (args: Location) => {
@@ -139,11 +105,6 @@ export async function activate(context: ExtensionContext) {
 		})
 		await window.showTextDocument(doc)
 	})
-}
-
-interface StatusMessage {
-	text: string
-	details?: string
 }
 
 function setStatusBarMessage(message: StatusMessage) {
