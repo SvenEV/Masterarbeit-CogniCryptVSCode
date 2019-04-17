@@ -1,13 +1,17 @@
 import * as net from 'net'
 import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri } from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
-import { handleQuickPickRequest, handleShowTextDocumentNotification, handleShowCfgNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification } from './protocol';
+import { handleQuickPickRequest, handleShowTextDocumentNotification, handleShowCfgNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
+
+export let context: ExtensionContext
 
 let client: LanguageClient
 let statusBarItem: StatusBarItem
 let statusMessage: StatusMessage
 
-export async function activate(context: ExtensionContext) {
+export async function activate(extensionContext: ExtensionContext) {
+	context = extensionContext
+
 	// Startup options for the language server
 	const lspTransport = workspace.getConfiguration().get("cognicrypt.lspTransport", "stdio")
 
@@ -83,6 +87,7 @@ export async function activate(context: ExtensionContext) {
 	client.onNotification("cognicrypt/treeData", handleTreeDataNotification(trees))
 	client.onRequest("cognicrypt/quickPick", handleQuickPickRequest)
 	client.onNotification("cognicrypt/showTextDocument", handleShowTextDocumentNotification)
+	client.onRequest("cognicrypt/connectToJavaExtension", handleConnectToJavaExtensionRequest)
 
 	// Register commands
 	commands.registerCommand("cognicrypt.goto", async (args: Location) => {

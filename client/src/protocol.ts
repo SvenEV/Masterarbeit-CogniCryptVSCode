@@ -1,4 +1,7 @@
-import { window, Range, workspace, TreeItem, TreeDataProvider, EventEmitter, Event, Uri, ProviderResult, commands } from 'vscode';
+import { window, Range, workspace, TreeItem, TreeDataProvider, EventEmitter, Event, Uri, ProviderResult, commands, extensions } from 'vscode'
+import { context } from './extension'
+import * as path from 'path'
+import * as fs from 'fs'
 
 // "cognicrypt/showCFG"
 
@@ -113,4 +116,22 @@ export async function handleShowTextDocumentNotification(args: ShowTextDocumentP
 	await window.showTextDocument(doc, {
 		selection: args.selection
 	})
+}
+
+// "cognicrypt/connectToJavaExtension"
+
+export interface ConnectToJavaExtensionResult {
+	jdtWorkspacePath: string
+}
+
+export function handleConnectToJavaExtensionRequest(args) {
+	const javaExt = extensions.getExtension("redhat.java")
+
+	if (javaExt) {
+		const jdtDir = path.join(context.storagePath, "..", "redhat.java", "jdt_ws")
+		const jdtWorkspaceDir = path.join(jdtDir, fs.readdirSync(jdtDir, 'utf8').find(path => path.startsWith(workspace.name)), "bin")
+		return { jdtWorkspacePath: jdtWorkspaceDir }
+	}
+
+	return null
 }

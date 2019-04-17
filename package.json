@@ -84,6 +84,19 @@
 							"VS Code starts a new instance of the language server and communicates over standard IO",
 							"VS Code connects to an already running language server via a socket on port 5007"
 						]
+					},
+					"cognicrypt.codeSource": {
+						"title": "The origin of the code to be analyzed",
+						"description": "The origin of the code to be analyzed. Changing this requires a reload of the extension or VS Code.",
+						"default": "source",
+						"enum": [
+							"source",
+							"compiled"
+						],
+						"enumDescriptions": [
+							"Analysis is performed on jimplified Java source code (uses WALA/Future Soot, full feature set, experimental)",
+							"Analysis is performed on jimplified Java class files (standard Soot, reduced feature set, requires extension 'Language Support for Java(TM)' by Red Hat)"
+						]
 					}
 				}
 			}
