@@ -1,5 +1,5 @@
 import * as net from 'net'
-import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri } from 'vscode'
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, extensions } from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
 import { handleQuickPickRequest, handleShowTextDocumentNotification, handleShowCfgNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
 
@@ -69,18 +69,46 @@ export async function activate(extensionContext: ExtensionContext) {
 	context.subscriptions.push(statusBarItem)
 	setStatusBarMessage({ text: "Activating CogniCrypt..." })
 
+	// Register commands
+	context.subscriptions.push(
+		commands.registerCommand("cognicrypt.goto", async (args: Location) => {
+			try {
+				args.uri = Uri.parse(args.uri.toString())
+				const doc = await workspace.openTextDocument(args.uri)
+				await window.showTextDocument(doc, {
+					preserveFocus: true,
+					selection: args.range
+				})
+			} catch (e) {
+				window.showErrorMessage(e)
+			}
+		}),
+		commands.registerCommand("cognicrypt.statusDetails", async _ => {
+			const doc = await workspace.openTextDocument({
+				content: statusMessage.details,
+				language: "markdown"
+			})
+			await window.showTextDocument(doc)
+		}),
+		commands.registerCommand("cognicrypt.mvnListDependencies", async _ => {
+			const terminal = window.createTerminal("CogniCrypt")
+			terminal.show()
+			terminal.sendText("mvn dependency:list -DincludeScope=test -o")
+		})
+	)
+
+	// Setup CogniCrypt viewlet
+	const trees = new Map<string, SimpleTreeDataProvider>([
+		['cognicrypt.info', new SimpleTreeDataProvider()],
+		['cognicrypt.diagnostics', new SimpleTreeDataProvider()]
+	])
+	trees.forEach((provider, viewId) => window.registerTreeDataProvider(viewId, provider))
+
 	// Create the language client and start it. This will also launch or connect to the server.
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions)
 	client.start()
 	await client.onReady()
 
-	// Setup CogniCrypt viewlet
-	const trees = new Map<string, SimpleTreeDataProvider>([
-		[ 'cognicrypt.info', new SimpleTreeDataProvider() ],
-		[ 'cognicrypt.diagnostics', new SimpleTreeDataProvider() ]
-	])
-	trees.forEach((provider, viewId) => window.registerTreeDataProvider(viewId, provider))
-	
 	// Subscribe to custom notifications
 	client.onNotification("cognicrypt/showCFG", handleShowCfgNotification)
 	client.onNotification("cognicrypt/status", async args => setStatusBarMessage(args))
@@ -88,28 +116,6 @@ export async function activate(extensionContext: ExtensionContext) {
 	client.onRequest("cognicrypt/quickPick", handleQuickPickRequest)
 	client.onNotification("cognicrypt/showTextDocument", handleShowTextDocumentNotification)
 	client.onRequest("cognicrypt/connectToJavaExtension", handleConnectToJavaExtensionRequest)
-
-	// Register commands
-	commands.registerCommand("cognicrypt.goto", async (args: Location) => {
-		try {
-			args.uri = Uri.parse(args.uri.toString())
-			const doc = await workspace.openTextDocument(args.uri)
-			await window.showTextDocument(doc, {
-				preserveFocus: true,
-				selection: args.range
-			})
-		} catch (e) {
-			window.showErrorMessage(e)
-		}
-	})
-
-	commands.registerCommand("cognicrypt.statusDetails", async _ => {
-		const doc = await workspace.openTextDocument({
-			content: statusMessage.details,
-			language: "markdown"
-		})
-		await window.showTextDocument(doc)
-	})
 }
 
 function setStatusBarMessage(message: StatusMessage) {

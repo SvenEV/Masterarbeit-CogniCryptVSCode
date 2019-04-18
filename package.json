@@ -45,12 +45,17 @@
 			{
 				"command": "cognicrypt.inspectJimple",
 				"category": "CogniCrypt",
-				"title": "Inspect Jimple of class..."
+				"title": "Inspect Jimple of Class..."
 			},
 			{
 				"command": "cognicrypt.reanalyze",
 				"category": "CogniCrypt",
 				"title": "Re-Analyze"
+			},
+			{
+				"command": "cognicrypt.mvnListDependencies",
+				"category": "CogniCrypt",
+				"title": "List Maven Dependencies"
 			}
 		],
 		"configuration": [
