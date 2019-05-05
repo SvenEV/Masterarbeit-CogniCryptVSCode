@@ -1,7 +1,7 @@
 import * as net from 'net'
-import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, extensions } from 'vscode'
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, Selection } from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
-import { handleQuickPickRequest, handleShowTextDocumentNotification, handleShowCfgNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
+import { handleQuickPickRequest, handleShowTextDocumentNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
 
 export let context: ExtensionContext
 
@@ -71,14 +71,21 @@ export async function activate(extensionContext: ExtensionContext) {
 
 	// Register commands
 	context.subscriptions.push(
-		commands.registerCommand("cognicrypt.goto", async (args: Location) => {
+		commands.registerCommand("cognicrypt.goto", async (args: Location[]) => {
 			try {
-				args.uri = Uri.parse(args.uri.toString())
-				const doc = await workspace.openTextDocument(args.uri)
-				await window.showTextDocument(doc, {
-					preserveFocus: true,
-					selection: args.range
+				groupBy(args, loc => loc.uri).forEach(async (locations, uri) => {
+					const fileUri = Uri.parse(uri.toString())
+					const doc = await workspace.openTextDocument(fileUri)
+					const editor = await window.showTextDocument(doc, {
+						preserveFocus: true
+					})
+					editor.selections = locations.map(loc => {
+						return new Selection(
+							loc.range.start.line, loc.range.start.character,
+							loc.range.end.line, loc.range.end.character)
+					})
 				})
+
 			} catch (e) {
 				window.showErrorMessage(e)
 			}
@@ -110,7 +117,6 @@ export async function activate(extensionContext: ExtensionContext) {
 	await client.onReady()
 
 	// Subscribe to custom notifications
-	client.onNotification("cognicrypt/showCFG", handleShowCfgNotification)
 	client.onNotification("cognicrypt/status", async args => setStatusBarMessage(args))
 	client.onNotification("cognicrypt/treeData", handleTreeDataNotification(trees))
 	client.onRequest("cognicrypt/quickPick", handleQuickPickRequest)
@@ -137,4 +143,18 @@ export function deactivate(): Thenable<void> | undefined {
 		return undefined
 	}
 	return client.stop()
+}
+
+function groupBy<TKey, TValue>(list: TValue[], keySelector: (item: TValue) => TKey) {
+    const map = new Map<TKey, TValue[]>();
+    list.forEach(item => {
+         const key = keySelector(item);
+         const collection = map.get(key);
+         if (!collection) {
+             map.set(key, [item]);
+         } else {
+             collection.push(item);
+         }
+    });
+    return map;
 }

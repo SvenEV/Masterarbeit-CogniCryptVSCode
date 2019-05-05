@@ -1,18 +1,7 @@
-import { window, Range, workspace, TreeItem, TreeDataProvider, EventEmitter, Event, Uri, ProviderResult, commands, extensions } from 'vscode'
+import { window, Range, workspace, TreeItem, TreeDataProvider, EventEmitter, Event, Uri, ProviderResult, commands, extensions, ViewColumn } from 'vscode'
 import { context } from './extension'
 import * as path from 'path'
 import * as fs from 'fs'
-
-// "cognicrypt/showCFG"
-
-export interface ShowCfgParams {
-	dotString: string
-}
-
-export async function handleShowCfgNotification(args: ShowCfgParams) {
-	const doc = await workspace.openTextDocument({ language: 'dot', content: args.dotString })
-	await window.showTextDocument(doc)
-}
 
 // "cognicrypt/status"
 
@@ -116,6 +105,13 @@ export async function handleShowTextDocumentNotification(args: ShowTextDocumentP
 	await window.showTextDocument(doc, {
 		selection: args.selection
 	})
+	if (args.language === "dot") {
+		if (extensions.getExtension("efanzh.graphviz-preview")) {
+			await commands.executeCommand("graphviz.showPreview")
+		} else {
+			await window.showInformationMessage("Install the 'Graphviz Preview' extension to view the Graphviz DOT file.")
+		}
+	}
 }
 
 // "cognicrypt/connectToJavaExtension"

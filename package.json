@@ -41,6 +41,15 @@
 				}
 			]
 		},
+		"menus": {
+			"view/item/context": [
+				{
+					"command": "cognicrypt.visualizeFlowAnalysis",
+					"group": "inline",
+					"when": "view == cognicrypt.diagnostics && viewItem == pathCondition"
+				}
+			]
+		},
 		"commands": [
 			{
 				"command": "cognicrypt.inspectJimple",
@@ -56,6 +65,11 @@
 				"command": "cognicrypt.mvnListDependencies",
 				"category": "CogniCrypt",
 				"title": "List Maven Dependencies"
+			},
+			{
+				"command": "cognicrypt.visualizeFlowAnalysis",
+				"category": "CogniCrypt",
+				"title": "Visualize Flow Analysis"
 			}
 		],
 		"configuration": [
