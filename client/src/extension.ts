@@ -1,5 +1,5 @@
 import * as net from 'net'
-import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, Selection } from 'vscode'
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, Selection, TextEditorDecorationType, DecorationRangeBehavior, OverviewRulerLane } from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
 import { handleQuickPickRequest, handleShowTextDocumentNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
 
@@ -8,6 +8,7 @@ export let context: ExtensionContext
 let client: LanguageClient
 let statusBarItem: StatusBarItem
 let statusMessage: StatusMessage
+let highlightDecoration: TextEditorDecorationType
 
 export async function activate(extensionContext: ExtensionContext) {
 	context = extensionContext
@@ -77,13 +78,10 @@ export async function activate(extensionContext: ExtensionContext) {
 					const fileUri = Uri.parse(uri.toString())
 					const doc = await workspace.openTextDocument(fileUri)
 					const editor = await window.showTextDocument(doc, {
-						preserveFocus: true
+						preserveFocus: true,
+						preview: false
 					})
-					editor.selections = locations.map(loc => {
-						return new Selection(
-							loc.range.start.line, loc.range.start.character,
-							loc.range.end.line, loc.range.end.character)
-					})
+					editor.setDecorations(highlightDecoration, locations.map(loc => loc.range))
 				})
 
 			} catch (e) {
@@ -110,6 +108,12 @@ export async function activate(extensionContext: ExtensionContext) {
 		['cognicrypt.diagnostics', new SimpleTreeDataProvider()]
 	])
 	trees.forEach((provider, viewId) => window.registerTreeDataProvider(viewId, provider))
+
+	// Configure text highlight decoration
+	context.subscriptions.push(highlightDecoration = window.createTextEditorDecorationType({
+		backgroundColor: "rgba(255, 216, 0, 0.5)",
+		overviewRulerColor: "rgba(255, 216, 0, 1)"
+	}))
 
 	// Create the language client and start it. This will also launch or connect to the server.
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions)
