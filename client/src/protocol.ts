@@ -107,7 +107,7 @@ export async function handleShowTextDocumentNotification(args: ShowTextDocumentP
 	})
 	if (args.language === "dot") {
 		if (extensions.getExtension("efanzh.graphviz-preview")) {
-			await commands.executeCommand("graphviz.showPreview")
+			await commands.executeCommand("graphviz.showPreviewToSide")
 		} else {
 			await window.showInformationMessage("Install the 'Graphviz Preview' extension to view the Graphviz DOT file.")
 		}
