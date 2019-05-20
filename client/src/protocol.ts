@@ -35,6 +35,8 @@ export class SimpleTreeDataProvider implements TreeDataProvider<TreeViewNode> {
 	getTreeItem(element: TreeViewNode): TreeItem | Thenable<TreeItem> {
 		if (typeof element.resourceUri === 'string')
 			element.resourceUri = Uri.parse(element.resourceUri)
+		if (typeof element.iconPath === 'string' && element.iconPath.startsWith("~"))
+			element.iconPath = path.join(__filename, "..", "..", "..", element.iconPath.substr(1))
 		return element
 	}
 
@@ -120,10 +122,11 @@ export interface ConnectToJavaExtensionResult {
 	jdtWorkspacePath: string
 }
 
-export function handleConnectToJavaExtensionRequest(args) {
+export async function handleConnectToJavaExtensionRequest(args) {
 	const javaExt = extensions.getExtension("redhat.java")
 
 	if (javaExt) {
+		await javaExt.activate()
 		const jdtDir = path.join(context.storagePath, "..", "redhat.java", "jdt_ws")
 		const jdtWorkspaceDir = path.join(jdtDir, fs.readdirSync(jdtDir, 'utf8').find(path => path.startsWith(workspace.name)), "bin")
 		return { jdtWorkspacePath: jdtWorkspaceDir }

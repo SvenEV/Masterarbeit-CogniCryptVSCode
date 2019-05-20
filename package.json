@@ -69,7 +69,8 @@
 			{
 				"command": "cognicrypt.visualizeFlowAnalysis",
 				"category": "CogniCrypt",
-				"title": "Visualize Flow Analysis"
+				"title": "Visualize Flow Analysis",
+				"icon": "resources/icons/DependencyGraph_16x.svg"
 			}
 		],
 		"configuration": [
