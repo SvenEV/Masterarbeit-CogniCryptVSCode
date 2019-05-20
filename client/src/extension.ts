@@ -1,5 +1,5 @@
 import * as net from 'net'
-import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, Selection, TextEditorDecorationType, DecorationRangeBehavior, OverviewRulerLane } from 'vscode'
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, Selection, TextEditorDecorationType, DecorationRangeBehavior, OverviewRulerLane, TextEditorRevealType } from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
 import { handleQuickPickRequest, handleShowTextDocumentNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
 
@@ -82,6 +82,8 @@ export async function activate(extensionContext: ExtensionContext) {
 						preview: false
 					})
 					editor.setDecorations(highlightDecoration, locations.map(loc => loc.range))
+					if (locations.length > 0) // scroll to first location
+						editor.revealRange(locations[0].range, TextEditorRevealType.Default)
 				})
 
 			} catch (e) {
