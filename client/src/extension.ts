@@ -1,5 +1,5 @@
 import * as net from 'net'
-import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, Selection, TextEditorDecorationType, DecorationRangeBehavior, OverviewRulerLane, TextEditorRevealType } from 'vscode'
+import { workspace, ExtensionContext, window, StatusBarAlignment, StatusBarItem, Location, commands, Uri, TextEditorDecorationType, TextEditorRevealType } from 'vscode'
 import { LanguageClient, LanguageClientOptions, ServerOptions, StreamInfo } from 'vscode-languageclient'
 import { handleQuickPickRequest, handleShowTextDocumentNotification, StatusMessage, SimpleTreeDataProvider, handleTreeDataNotification, handleConnectToJavaExtensionRequest } from './protocol'
 
