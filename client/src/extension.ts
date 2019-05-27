@@ -9,6 +9,7 @@ let client: LanguageClient
 let statusBarItem: StatusBarItem
 let statusMessage: StatusMessage
 let highlightDecoration: TextEditorDecorationType
+let highlightRedDecoration: TextEditorDecorationType
 
 export async function activate(extensionContext: ExtensionContext) {
 	context = extensionContext
@@ -72,18 +73,23 @@ export async function activate(extensionContext: ExtensionContext) {
 
 	// Register commands
 	context.subscriptions.push(
-		commands.registerCommand("cognicrypt.goto", async (args: Location[]) => {
+		commands.registerCommand("cognicrypt.goto", async (args: { location: Location, decorationId: "yellow" | "red" }[]) => {
 			try {
-				groupBy(args, loc => loc.uri).forEach(async (locations, uri) => {
+				groupBy(args, loc => loc.location.uri).forEach(async (locations, uri) => {
 					const fileUri = Uri.parse(uri.toString())
 					const doc = await workspace.openTextDocument(fileUri)
 					const editor = await window.showTextDocument(doc, {
 						preserveFocus: true,
 						preview: false
 					})
-					editor.setDecorations(highlightDecoration, locations.map(loc => loc.range))
+					editor.setDecorations(highlightDecoration, locations
+						.filter(loc => loc.decorationId == "yellow")
+						.map(loc => loc.location.range))
+					editor.setDecorations(highlightRedDecoration, locations
+						.filter(loc => loc.decorationId == "red")
+						.map(loc => loc.location.range))
 					if (locations.length > 0) // scroll to first location
-						editor.revealRange(locations[0].range, TextEditorRevealType.Default)
+						editor.revealRange(locations[0].location.range, TextEditorRevealType.Default)
 				})
 
 			} catch (e) {
@@ -111,11 +117,17 @@ export async function activate(extensionContext: ExtensionContext) {
 	])
 	trees.forEach((provider, viewId) => window.registerTreeDataProvider(viewId, provider))
 
-	// Configure text highlight decoration
-	context.subscriptions.push(highlightDecoration = window.createTextEditorDecorationType({
-		backgroundColor: "rgba(255, 216, 0, 0.5)",
-		overviewRulerColor: "rgba(255, 216, 0, 1)"
-	}))
+	// Configure text highlight decorations
+	context.subscriptions.push(
+		highlightDecoration = window.createTextEditorDecorationType({
+			backgroundColor: "rgba(255, 216, 0, 0.5)",
+			overviewRulerColor: "rgba(255, 216, 0, 1)"
+		}),
+		highlightRedDecoration = window.createTextEditorDecorationType({
+			backgroundColor: "#ffcccc",
+			overviewRulerColor: "#ffcccc"
+		})
+	)
 
 	// Create the language client and start it. This will also launch or connect to the server.
 	client = new LanguageClient('CogniCrypt', 'CogniCrypt', serverOptions, clientOptions)
