@@ -120,12 +120,20 @@ export async function activate(extensionContext: ExtensionContext) {
 	// Configure text highlight decorations
 	context.subscriptions.push(
 		highlightDecoration = window.createTextEditorDecorationType({
-			backgroundColor: "rgba(255, 216, 0, 0.5)",
-			overviewRulerColor: "rgba(255, 216, 0, 1)"
+			backgroundColor: "rgba(255, 216, 0, 0.18)",
+			overviewRulerColor: "rgba(255, 216, 0, 0.18)",
+			outline: "1px solid rgba(255, 216, 0, 0.9)",
+			dark: {
+				outline: "1px solid rgba(255, 216, 0, 0.7)"
+			}
 		}),
 		highlightRedDecoration = window.createTextEditorDecorationType({
-			backgroundColor: "#ffcccc",
-			overviewRulerColor: "#ffcccc"
+			backgroundColor: "rgba(255, 0, 0, 0.18)",
+			overviewRulerColor: "rgba(255, 0, 0, 0.18)",
+			outline: "1px solid rgba(255, 0, 0, 0.7)",
+			dark: {
+				outline: "1px solid rgba(255, 0, 0, 0.9)"
+			}
 		})
 	)
 
